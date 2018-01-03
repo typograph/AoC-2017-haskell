@@ -1,25 +1,19 @@
-import qualified Data.Sequence as Seq
+import Data.Array.IO
 
-type ISeq = Seq.Seq Int
-
-stepEval :: (Int -> Int) -> (Int, ISeq) -> (Int, ISeq)
-stepEval f (i,s) =
-  let offset = Seq.index s i
-      newOffset = f offset
-  in (i + offset, Seq.update i newOffset s)
-
-cntEval :: (Int -> Int) -> ISeq -> Int
-cntEval f cmnds =
-    let len = Seq.length cmnds
-        cntEval' s state@(i,_) =
-            if i < 0 || i+1 > len then s
-            else cntEval' (s+1) $ stepEval f state
-    in cntEval' 0 (0,cmnds)
+cntEval :: (Int -> Int) -> IOUArray Int Int -> IO Int
+cntEval f a = cntEval' 0 1
+  where cntEval' :: Int -> Int -> IO Int
+        cntEval' cnt ind =
+          do inside <- (`inRange` ind) <$> getBounds a
+             if inside
+               then do v <- readArray a ind
+                       writeArray a ind $ f v
+                       cntEval' (cnt+1) (ind+v)
+               else return cnt
 
 main :: IO ()
-main = solution <$> readFile "data/advent_05.txt" >>= putStrLn
-  where solution file =
-          let seq = Seq.fromList $ map read $ lines file
-              advance1 offset = offset +1
-              advance2 offset = if offset >= 3 then offset - 1 else offset + 1
-          in "Part I : " ++ show (cntEval advance1 seq) ++ "\nPart II : " ++ show (cntEval advance2 seq)
+main =
+  do initState <- map read . lines <$> readFile "data/advent_05.txt"
+     count1 <- cntEval (+1) =<< newListArray (1, length initState) initState
+     count2 <- cntEval (\o -> if o>=3 then o-1 else o+1) =<< newListArray (1, length initState) initState
+     putStrLn $ "Part I : " ++ show count1 ++ "\nPart II : " ++ show count2
