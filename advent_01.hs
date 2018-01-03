@@ -1,24 +1,14 @@
 import Data.Char (isSpace, isPrint)
-{-}
-circ_zip :: [a] -> [(a,a)]
-circ_zip [] = undefined   -- there was no specification for this case
-circ_zip (x:[]) = undefined -- again, no specification
-circ_zip (x:xs) = circ_zip_helper x (x:xs)
-  where circ_zip_helper :: a -> [a] -> [(a,a)]
-        circ_zip_helper _ [] = undefined
-        circ_zip_helper z (x:[]) = (x,z) : []
-        circ_zip_helper z (x:(y:ys)) = (x,y) : circ_zip_helper z (y:ys)
-        -}
 
-circZip :: [a] -> [(a,a)]
---circZip ls = zip ls (tail ls ++ [head ls]) -- Part 1
-circZip ls =
-  let nHalf = length ls `div` 2
-      perm = drop nHalf ls ++ take nHalf ls
-  in zip ls perm
+circZip :: Int -> [a] -> [(a,a)]
+circZip offset ls = zip ls $ drop offset ls ++ take offset ls
 
-count :: String -> Int
-count = sum . map (\(a,b) -> if a == b then fromEnum a - fromEnum '0' else 0) . circZip
+count :: Int -> String -> Int
+count i = sum . map (\(a,b) -> if a == b then fromEnum a - fromEnum '0' else 0) . circZip i
 
-main = count <$> trunc <$> readFile "data/advent_01.txt" >>= print
-  where trunc = takeWhile isPrint . dropWhile isSpace
+main :: IO ()
+main = solution <$> readFile "data/advent_01.txt" >>= putStrLn
+  where solution file =
+          let digits = takeWhile isPrint $ dropWhile isSpace file
+              lHalf = length digits `div` 2
+          in "Part I : " ++ show (count 1 digits) ++ "\nPart II : " ++ show (count lHalf digits)
